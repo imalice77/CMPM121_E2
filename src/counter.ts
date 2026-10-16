@@ -18,6 +18,12 @@ type ShieldSnapshot = {
   missingCharge: number;
 };
 
+type ShieldChangeEvent = Event & {
+  snapshot: ShieldSnapshot;
+};
+
+const shieldEvents = new EventTarget();
+
 let count = 0;
 let panel: HTMLParagraphElement | null = null;
 let panelUpdates = 0;
@@ -45,6 +51,7 @@ function drawMeter(snapshot: ShieldSnapshot) {
     12,
     100,
   );
+
   readout.textContent =
     `Shield charge: ${snapshot.charge} / ${snapshot.capacity}`;
 }
@@ -62,12 +69,20 @@ function updateStats() {
   renderStats(createSnapshot());
 }
 
+shieldEvents.addEventListener("shield-change", (event: Event) => {
+  const change = event as ShieldChangeEvent;
+  drawMeter(change.snapshot);
+});
+
 function setCount(next: number) {
   const bounded = Math.max(0, Math.min(capacity, next));
   if (bounded === count) return;
 
   count = bounded;
-  drawMeter(createSnapshot());
+
+  const event = new Event("shield-change") as ShieldChangeEvent;
+  event.snapshot = createSnapshot();
+  shieldEvents.dispatchEvent(event);
 
   if (panel) updateStats();
 }
