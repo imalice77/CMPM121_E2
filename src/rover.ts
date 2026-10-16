@@ -3,6 +3,12 @@ export {};
 const canvas = document.querySelector<HTMLCanvasElement>("#rover-canvas")!;
 const ctx = canvas.getContext("2d")!;
 const readout = document.querySelector<HTMLParagraphElement>("#rover-readout")!;
+const pendingList = document.querySelector<HTMLOListElement>("#rover-pending")!;
+const queueStatus = document.querySelector<HTMLParagraphElement>(
+  "#rover-queue-status",
+)!;
+const runButton = document.querySelector<HTMLButtonElement>("#rover-run")!;
+const clearButton = document.querySelector<HTMLButtonElement>("#rover-clear")!;
 
 type Command = "Forward" | "Right";
 
@@ -22,6 +28,7 @@ const directions: Direction[] = [
 let x = 2;
 let y = 2;
 let direction = 0;
+const commandQueue: Command[] = [];
 
 function drawRover() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -50,6 +57,23 @@ function drawRover() {
   }`;
 }
 
+function updateQueueDisplay() {
+  pendingList.replaceChildren();
+
+  for (const command of commandQueue) {
+    const item = document.createElement("li");
+    item.textContent = command;
+    pendingList.append(item);
+  }
+
+  queueStatus.textContent = commandQueue.length === 0
+    ? "Empty · no pending commands"
+    : `${commandQueue.length} command(s) pending`;
+
+  runButton.disabled = commandQueue.length === 0;
+  clearButton.disabled = commandQueue.length === 0;
+}
+
 function executeCommand(command: Command) {
   if (command === "Forward") {
     const currentDirection = directions[direction];
@@ -58,23 +82,44 @@ function executeCommand(command: Command) {
   } else {
     direction = (direction + 1) % directions.length;
   }
+}
 
-  drawRover();
+function enqueueCommand(command: Command) {
+  commandQueue.push(command);
+  updateQueueDisplay();
 }
 
 document.querySelector<HTMLButtonElement>("#rover-forward")!.onclick = () => {
-  executeCommand("Forward");
+  enqueueCommand("Forward");
 };
 
 document.querySelector<HTMLButtonElement>("#rover-right")!.onclick = () => {
-  executeCommand("Right");
+  enqueueCommand("Right");
+};
+
+runButton.onclick = () => {
+  while (commandQueue.length > 0) {
+    const command = commandQueue.shift()!;
+    executeCommand(command);
+  }
+
+  drawRover();
+  updateQueueDisplay();
+};
+
+clearButton.onclick = () => {
+  commandQueue.length = 0;
+  updateQueueDisplay();
 };
 
 document.querySelector<HTMLButtonElement>("#rover-reset")!.onclick = () => {
   x = 2;
   y = 2;
   direction = 0;
+  commandQueue.length = 0;
   drawRover();
+  updateQueueDisplay();
 };
 
 drawRover();
+updateQueueDisplay();
