@@ -13,6 +13,12 @@ type AllocationResult = {
   balance: number;
 };
 
+type AllocationDisplayRow = {
+  label: string;
+  value: number;
+  color: string;
+};
+
 function calculateAllocation(assignedCrewCount: number): AllocationResult {
   const production = assignedCrewCount * 3;
   const consumption = 6;
@@ -43,28 +49,41 @@ function renderAllocationReadout(
 }
 
 function drawAllocationBars(result: AllocationResult) {
-  const { production, consumption } = result;
+  const rows: AllocationDisplayRow[] = [
+    {
+      label: "Production",
+      value: result.production,
+      color: "#27766b",
+    },
+    {
+      label: "Consumption",
+      value: result.consumption,
+      color: "#a44d23",
+    },
+  ];
 
-  ctx.fillStyle = "#27766b";
-  ctx.fillRect(18, 110, production * 14, 20);
+  for (const [index, row] of rows.entries()) {
+    const y = 110 + index * 52;
 
-  ctx.fillStyle = "#a44d23";
-  ctx.fillRect(18, 162, consumption * 14, 20);
+    ctx.fillStyle = "#233e43";
+    ctx.font = "14px system-ui";
+    ctx.fillText(`${row.label}: ${row.value}`, 18, y - 8);
+
+    ctx.fillStyle = row.color;
+    ctx.fillRect(18, y, row.value * 14, 20);
+  }
 }
 
 function renderAllocation() {
   const result = calculateAllocation(assignedCrewCount);
-  const { production, consumption } = result;
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawCrewAssignments(assignedCrewCount);
 
   ctx.fillStyle = "#233e43";
   ctx.font = "14px system-ui";
   ctx.fillText(`Producers: ${assignedCrewCount} / 6`, 18, 76);
-  ctx.fillText(`Production: ${production}`, 18, 102);
   drawAllocationBars(result);
-  ctx.fillStyle = "#233e43";
-  ctx.fillText(`Consumption: ${consumption}`, 18, 154);
   renderAllocationReadout(assignedCrewCount, result);
 }
 
@@ -81,4 +100,5 @@ document.querySelector<HTMLButtonElement>("#allocation-reset")!.onclick =
     assignedCrewCount = 2;
     renderAllocation();
   };
+
 renderAllocation();
